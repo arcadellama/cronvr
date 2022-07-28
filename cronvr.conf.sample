@@ -1,0 +1,16 @@
+# Config file for cronvr.sh
+basedir="/path/to/recordings"
+length="900"  # time in seconds
+rtsp_path="cam/realmonitor?channel=1&subtype=0" # camera specific
+port=554
+protocol=udp # udp or tcp
+
+# Camera login auth
+cam_user="admin"
+cam_pass="password"
+
+# Camera definitions
+#camera[name]=0.0.0.0
+camera[doorbell]=192.168.123.1
+camera[frontyard]=192.168.123.2
+camera[backyard]=192.168.123.3
