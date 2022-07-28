@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# cronvr.sh
-# Shell script to record and manage IP camera
+# cronvr
+# A shell script to record and manage IP camera
 # 
 # Heavily inspired by u/oddworld19 from r/homelab
 
