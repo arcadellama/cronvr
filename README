@@ -1,0 +1,6 @@
+# cronvr
+## A simple script to emulate an NVR for IP cameras
+
+Requires:
+bash
+ffmpeg
