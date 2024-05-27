@@ -11,7 +11,7 @@ PRGNAM="cronvr"
 VERSION="0.5"
 CWD="$(pwd)"
 STARTTIME=$(/bin/date +"%Y%m%d")"-"$(/bin/date +"%H").$(/bin/date +"%M").$(/bin/date +"%S")
-TODAY=$(/bin/date +"%A")
+TODAY=$(/bin/date -I)
 CONFIG=("/etc/$PRGNAM" "/usr/local/etc/$PRGNAM" "$HOME/.config/$PRGNAM" "$HOME/.$PRGNAM" "$CWD/$PRGNAM.conf")
 CONFOVERRIDE=0
 
