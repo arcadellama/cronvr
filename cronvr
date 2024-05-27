@@ -69,9 +69,15 @@ source_config () {
 
 record () {
     source_config
+    # Dependency check
+    if ! test -x /usr/bin/ffmpeg; then
+      printf "ERROR: /usr/bin/ffmpeg not found\n" >&2
+      exit 1
+    fi
+
     for cam_name in "${!camera[@]}"; do
-        printf "[%s %s] Starting record of %s at %s...\n" "$PRGNAM" "$VERSION" "$cam_name" "${camera[$cam_name]}"
-        mkdir -p "$basedir/$cam_name/$TODAY"
+        printf "[%s %s] Starting record of %s at %s...\n" "$PRGNAM" "$VERSION" "$cam_name" "${camera[$cam_name]}" >&2
+        mkdir -p "$basedir/$cam_name/$TODAY" || exit 1
         ( /usr/bin/ffmpeg -rtsp_transport $protocol -i "rtsp://$cam_user:$cam_pass@${camera[$cam_name]}:$port/$rtsp_path" -vcodec copy -acodec copy -t "$length" $basedir/$cam_name/$TODAY/$STARTTIME.mkv ) >/dev/null 2>&1 &
     done
 }
@@ -90,7 +96,7 @@ main () {
 
     while [ "$#" -gt 0 ]; do
         case "$1" in
-            --config|-c)
+            --config|-c|-f)
                 CONFOVERRIDE=1
                 CONFIG="$2"
                 shift 2 ;;
