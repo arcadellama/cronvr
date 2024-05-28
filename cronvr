@@ -8,7 +8,7 @@
 set -e
 
 PRGNAM="cronvr"
-VERSION="0.5"
+VERSION="0.6"
 CWD="$(pwd)"
 STARTTIME=$(/bin/date +"%Y%m%d")"-"$(/bin/date +"%H").$(/bin/date +"%M").$(/bin/date +"%S")
 TODAY=$(/bin/date -I)
@@ -26,6 +26,10 @@ cam_user=""
 cam_pass=""
 protocol=""
 declare -A camera
+
+log () {
+  printf >&2 '[%s] %s (%s): %s\n' "$(date -Iseconds)" "$PRGNAM" "$VERSION" "$*"
+}
 
 usage () {
     printf "%s [Version: %s]\n" "$PRGNAM" "$VERSION"
@@ -56,7 +60,7 @@ get_config () {
     # Check if variables are set
     for vars in "$basedir" "$rtsp_path" "$cam_user" "$cam_pass"; do
         if [ -z "$vars" ]; then
-            printf "ERROR: Cannot find config file or variables unset.\n"
+            log "ERROR: Cannot find config file or variables unset."
             return 1
         fi
     done
@@ -71,12 +75,12 @@ record () {
     source_config
     # Dependency check
     if ! test -x /usr/bin/ffmpeg; then
-      printf "ERROR: /usr/bin/ffmpeg not found\n" >&2
+      log "ERROR: /usr/bin/ffmpeg not found."
       exit 1
     fi
 
     for cam_name in "${!camera[@]}"; do
-        printf "[%s %s] Starting record of %s at %s...\n" "$PRGNAM" "$VERSION" "$cam_name" "${camera[$cam_name]}" >&2
+        log "Starting record of $cam_name ${camera[$cam_name]}"
         mkdir -p "$basedir/$cam_name/$TODAY" || exit 1
         ( /usr/bin/ffmpeg -rtsp_transport $protocol -i "rtsp://$cam_user:$cam_pass@${camera[$cam_name]}:$port/$rtsp_path" -vcodec copy -acodec copy -t "$length" $basedir/$cam_name/$TODAY/$STARTTIME.mkv ) >/dev/null 2>&1 &
     done
@@ -86,6 +90,8 @@ cleanup () {
     source_config
     # Remove files older than $archive days, default 5
     find "$basedir" -type f -mtime "$archive" -exec rm {} \;
+    # Remove empty directories
+    find "$basedir" -type d -empty -exec rm -r {} \;
 }
 
 main () {
