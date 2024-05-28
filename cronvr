@@ -14,6 +14,7 @@ STARTTIME=$(/bin/date +"%Y%m%d")"-"$(/bin/date +"%H").$(/bin/date +"%M").$(/bin/
 TODAY=$(/bin/date -I)
 CONFIG=("/etc/$PRGNAM" "/usr/local/etc/$PRGNAM" "$HOME/.config/$PRGNAM" "$HOME/.$PRGNAM" "$CWD/$PRGNAM.conf")
 CONFOVERRIDE=0
+VERBOSE="${VERBOSE:-0}"
 
 # Default vars, can be overridden in conf
 archive="5"    # number of days to retain
@@ -26,6 +27,12 @@ cam_user=""
 cam_pass=""
 protocol=""
 declare -A camera
+
+info () {
+  if [ "$VERBOSE" -gt 0 ]; then
+    printf >&2 '[%s] %s (%s): %s\n' "$(date -Iseconds)" "$PRGNAM" "$VERSION" "$*"
+  fi
+}
 
 log () {
   printf >&2 '[%s] %s (%s): %s\n' "$(date -Iseconds)" "$PRGNAM" "$VERSION" "$*"
@@ -80,18 +87,26 @@ record () {
     fi
 
     for cam_name in "${!camera[@]}"; do
-        log "Starting record of $cam_name ${camera[$cam_name]}"
+        info "Starting record of $cam_name ${camera[$cam_name]}"
         mkdir -p "$basedir/$cam_name/$TODAY" || exit 1
-        ( /usr/bin/ffmpeg -rtsp_transport $protocol -i "rtsp://$cam_user:$cam_pass@${camera[$cam_name]}:$port/$rtsp_path" -vcodec copy -acodec copy -t "$length" $basedir/$cam_name/$TODAY/$STARTTIME.mkv ) >/dev/null 2>&1 &
+        ( /usr/bin/ffmpeg -y -vsync 0 -hwaccel cuda -hwaccel_output_format cuda -rtsp_transport $protocol -i "rtsp://$cam_user:$cam_pass@${camera[$cam_name]}:$port/$rtsp_path" -c:a copy -c:v hevc_nvenc -t "$length" $basedir/$cam_name/$TODAY/$STARTTIME.mkv ) >/dev/null 2>&1 &
+        #( /usr/bin/ffmpeg -rtsp_transport $protocol -i "rtsp://$cam_user:$cam_pass@${camera[$cam_name]}:$port/$rtsp_path" -vcodec copy -acodec copy -t "$length" $basedir/$cam_name/$TODAY/$STARTTIME.mkv ) >/dev/null 2>&1 &
     done
 }
 
 cleanup () {
     source_config
     # Remove files older than $archive days, default 5
-    find "$basedir" -type f -mtime "$archive" -exec rm {} \;
+    find "$basedir" -type f -mtime "$archive" | \
+    while read -r f; do
+      log "CLEANUP file: $f -- $(rm "$f" 2>&1)"
+    done
+    
     # Remove empty directories
-    find "$basedir" -type d -empty -exec rm -r {} \;
+    find "$basedir" -type d -empty | \
+    while read -r d; do
+      log "CLEANUP directory: $d -- $(rm -r "$d" 2>&1)"
+    done
 }
 
 main () {
